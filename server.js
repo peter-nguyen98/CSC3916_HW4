@@ -1,152 +1,186 @@
-var express = require('express');
-var http = require('http');
-var bodyParser = require('body-parser');
-var passport = require('passport');
-var authController = require('./auth');
-var authJwtController = require('./auth_jwt');
-db = require('./db')(); //global hack
-var jwt = require('jsonwebtoken');
+// === FROM EXTERNAL FILES === //
+var express            =  require( 'express' );
+var http               =  require( 'http' );
+var bodyParser         =  require( 'body-parser' );
+var passport           =  require( 'passport' );
+var authController     =  require( './auth' );
+var authJwtController  =  require( './auth_jwt' );
+var jwt                =  require( 'jsonwebtoken' );
+var User               =  require( './user' );
+var Movie              =  require( './movie' );
+var userController     =  require( './usercontroller' );
+var movieController    =  require( './moviecontroller' );
+require( './db.js' );
 
-var app = express();
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
 
-app.use(passport.initialize());
+// === CREATE THE APP === //
+var app  =  express( );
 
-var router = express.Router();
+// === SET UP BODY PARSER === //
+app.use( bodyParser.json( ) );
+app.use( bodyParser.urlencoded( { extended : false } ) );
 
-function notSupported (req, res, route)
+// === SET UP PASSPORT === //
+app.use( passport.initialize( ) );
+
+// === CREATE ROUTER === //
+var router  =  express.Router( );
+
+// === CUSTOM FUNCTION TO GENERATE RETURN MESSAGE FOR BAD ROUTES === //
+function getBadRouteJSON( req , res , route )
 {
-	res.json({success: false, msg: req.method + ' ... HTTP METHOD NOT SUPPORTED'});
+	res.json(	{	
+					success:  false, 
+					msg:      req.method + " requests are not supported by " + route
+				});
 }
 
-function baseURL (req, res)
+// === CUSTOM FUNCTION TO RETURN JSON OBJECT OF HEADER, KEY, AND BODY OF REQUEST === //
+function getJSONObject( req ) 
 {
-	res.json({success: false, msg: req.method + ' ... NOT SUPPORTED by this URL'});
-}
-
-function movieReturn(req, res, type)
-{
-	res.status(200);
-	res.set(req.headers);
-	res.query = req.query;
-	res.json(
-	{
-		message:  type,
-		headers: req.headers,
-		query: res.query,
-		env: process.env.UNIQUE_KEY
-	}).send();
-}
-
-function getJSONObject(req) {
     var json = {
-        headers : "No Headers",
-        key: process.env.UNIQUE_KEY,
-        body : "No Body"
-    };
+					headers  :  "No Headers",
+					key      :  process.env.UNIQUE_KEY,
+					body     :  "No Body"
+				};
 
-    if (req.body != null) {
-        json.body = req.body;
-    }
-    if (req.headers != null) {
-        json.headers = req.headers;
-    }
+    if ( req.body != null ) 
+        json.body  =  req.body;
+	
+    if ( req.headers != null ) 
+        json.headers  =  req.headers;
 
     return json;
 }
 
+// === CUSTOM FUNCTION TO RETURN JSON OBJECT OF STATUS, MESSAGE, HEADER, QUERY, & ENVIRONMENT KEY FOR /MOVIES === //
+function getMoviesJSONObject( req , msg )
+{
+	var json = {
+					status   :  200,
+					message  :  msg,
+					headers  :  "No Headers",
+					query    :  "No Query String",
+					env      :  process.env.UNIQUE_KEY
+				};
+	
+	if ( req.query != null )
+		json.query  =  req.query; 
+
+	if ( req.headers != null )
+		json.headers  =  req.headers;
+	
+	return json;
+}
+
+
+
+// === ROUTES TO /POST PERFORM A "SMART ECHO" WITH BASIC AUTH === //
 router.route('/post')
-    .post(authController.isAuthenticated, function (req, res) {
-            console.log(req.body);
-            res = res.status(200);
-            if (req.get('Content-Type')) {
-                console.log("Content-Type: " + req.get('Content-Type'));
-                res = res.type(req.get('Content-Type'));
-            }
-            var o = getJSONObject(req);
-            res.json(o);
-        }
-    );
-
-router.route('/postjwt')
-    .post(authJwtController.isAuthenticated, function (req, res) {
-            console.log(req.body);
-            res = res.status(200);
-            if (req.get('Content-Type')) {
-                console.log("Content-Type: " + req.get('Content-Type'));
-                res = res.type(req.get('Content-Type'));
-            }
-            res.send(req.body);
-        }
-    );
-
-router.post('/signup', function(req, res) 
-{
-    if (!req.body.username || !req.body.password) {
-        res.json({success: false, msg: 'Please pass the username and password.'});
-    } else {
-        var newUser = {
-            username: req.body.username,
-            password: req.body.password
-        };
-        // save the user
-        db.save(newUser); //no duplicate checking
-        res.json({success: true, msg: 'Successfully created a new user.'});
-    }
-});
-
-
-router.get('/signup', function(req, res) {notSupported(req, res, "/signup");} );
-router.put('/signup', function(req, res) {notSupported(req, res, "/signup");} );
-router.patch('/signup', function(req, res) {notSupported(req, res, "/signup");} );
-router.delete('/signup', function(req, res) {notSupported(req, res, "/signup");} );
-
-
-router.post('/signin', function(req, res) 
-{
-		var user;
-		if (req.body.username)
+    .post(
+		authController.isAuthenticated, 
+		function ( req , res ) 
 		{
-			user = db.findOne(req.body.username);
-		}
-		else 
-		{
-			user = null;
-		}
+            console.log( req.body );
+            res  =  res.status( 200 );
+            if ( req.get( 'Content-Type' ) ) 
+			{
+                console.log( "Content-Type: " + req.get( 'Content-Type' ) );
+                res  =  res.type( req.get( 'Content-Type' ) );
+            }
+            var o  =  getJSONObject( req );
+            res.json( o );
+        });
+
 		
-        if (!user) {
-            res.status(401).send({success: false, msg: 'Authentication failed. User not found.'});
+		
+// === ROUTES TO /POSTJWT PERFORM AN "ECHO" WITH JWT AUTH === //
+router.route( '/postjwt' )
+    .post(
+		authJwtController.isAuthenticated, 
+		function ( req , res )
+		{
+            console.log( req.body );
+            res  =  res.status( 200 );
+            if ( req.get( 'Content-Type' ) ) 
+			{
+                console.log( "Content-Type: " + req.get( 'Content-Type' ) );
+                res  =  res.type( req.get( 'Content-Type' ) );
+            }
+            res.send( req.body );
         }
-        else {
-            // check if password matches
-            if (req.body.password == user.password)  {
-                var userToken = { id : user.id, username: user.username };
-                var token = jwt.sign(userToken, process.env.SECRET_KEY);
-                res.json({success: true, token: 'JWT ' + token});
-            }
-            else {
-                res.status(401).send({success: false, msg: 'Authentication failed. Wrong password.'});
-            }
-        };
-});
+    );
+	
+router.route( '/findallusers' )
+    .post( userController.findAllUsers );
 
+	
+	
+// === ROUTES TO /SIGNUP === //
+router.route( '/signup' )
+	// === HANDLE POST REQUESTS === //
+	.post( userController.signUp )
+	// === ALL OTHER ROUTES TO /SIGNUP ARE REJECTED === //
+	.all(
+		function( req , res )
+		{ 
+			getBadRouteJSON( req , res , "/signup" ); 
+		});
 
-router.get('/signin', function(req, res) {notSupported(req, res, "/signin");} );
-router.put('/signin', function(req, res) {notSupported(req, res, "/signin");} );
-router.patch('/signin', function(req, res) {notSupported(req, res, "/signin");} );
-router.delete('/signin', function(req, res) {notSupported(req, res, "/signin");} );
+		
+		
+// === ROUTES TO /SIGNIN === //
+router.route( '/signin' )
+	// == HANDLE POST REQUESTS === //
+	.post( userController.signIn )
+	// === ALL OTHER ROUTES TO /SIGNIN  ARE REJECTED
+	.all(
+		function( req , res )
+		{ 
+			getBadRouteJSON( req , res , "/signin" ); 
+		});
 
+// === ROUTES TO /MOVIES === //
+router.route( '/movies' )
+	// === HANDLE GET REQUESTS === //
+	.get(
+			authJwtController.isAuthenticated, 
+			movieController.getMovies 
+		)
+	// === HANDLE POST REQUESTS === //
+	.post(
+			authJwtController.isAuthenticated,
+			movieController.postMovie
+		)
+	// === HANDLE PUT REQUESTS === //
+	.put(
+			authJwtController.isAuthenticated, 
+			movieController.putMovie
+		)
+	// === HANDLE DELETE REQUESTS === //
+	.delete(
+			authJwtController.isAuthenticated, 
+			movieController.deleteMovie
+		)
+	// === REJECT ALL OTHER REQUESTS TO /MOVIES === //
+	.all(
+		function( req , res )
+		{ 
+			getBadRouteJSON( req , res , "/movies" );
+		});
 
-router.get('/movies', function(req,res){ movieReturn(req, res, "GET Movies"); } );
-router.post('/movies', function(req,res){ movieReturn(req, res, "SAVED Movie"); } );
-router.put('/movies', authJwtController.isAuthenticated, function(req,res){ movieReturn(req, res, "Movie UPDATED"); } );
-router.delete('/movies', authController.isAuthenticated, function(req,res){ movieReturn(req, res, "Movie DELETED"); } );
-router.all('/movies', function(req, res) {notSupported(req, res, "/movies");} );
+// === ATTEMPT TO ROUTE REQUEST === //
+app.use( '/' , router );
 
+// === IF UNEXPEDTED ROUTE IS SENT, REJECT IT HERE === //
+app.use(
+	function( req , res )
+	{ 
+		getBadRouteJSON( req , res , "this URL path" ); 
+	});
 
-app.use('/', router);
-app.use(function(req, res) {baseURL(req, res,) ; } );
-app.listen(process.env.PORT || 8080);
+// === LISTEN ON THE ENVIRONMENT PORT OR 8080 === //
+app.listen( process.env.PORT || 8080 );
 
-module.exports = app; // for testing
+// === EXPORT APP FOR TESTS === //
+module.exports  =  app; // for testing

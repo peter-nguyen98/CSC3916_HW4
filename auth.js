@@ -1,20 +1,32 @@
-// Load required packages
-var passport = require('passport');
-var BasicStrategy = require('passport-http').BasicStrategy;
+// === LOAD REQUIRED PACKAGES === //
+var passport       =  require( 'passport' );
+var BasicStrategy  =  require( 'passport-http' ).BasicStrategy;
+var userController =  require( './usercontroller' );
+var crypto         =  require( 'crypto' );
 
-passport.use(new BasicStrategy(
-    function(username, password, done) {
-        //hard coded
-        var user = db.findOne(username);
-        if (user != null && username == user.username && password == user.password)
-        {
-            return done(null, {name : user.username }	);
-        }
-        else
-        {
-            return done(null, false);
-        }
-    }
-));
+// === BASIC AUTHENTICATION STRATEGY === //
+passport.use(
+	new BasicStrategy(
+		function( username , password , done ) 
+		{
+			// === ATTEMPT TO RETRIEVE USER FROM DATABASE === //
+			userController.findUserByLogin( username , password )
+				.then(
+					function( user )
+					{
+						// === IF USER IS FOUND === //
+						if ( user )
+						{
+							return done( null , { name: user.username } );
+						}
+						// === OTHERWISE FAIL === //
+						else
+						{
+							return done( null , false );
+						}
+					});
+		}
+	));
 
-exports.isAuthenticated = passport.authenticate('basic', { session : false });
+// === SEND WHETHER AUTHENTICATION FAILS OR NOT === //
+exports.isAuthenticated  =  passport.authenticate( 'basic' , { session : false } );
