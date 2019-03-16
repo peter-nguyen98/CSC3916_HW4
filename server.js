@@ -1,4 +1,3 @@
-// === FROM EXTERNAL FILES === //
 var express            =  require( 'express' );
 var http               =  require( 'http' );
 var bodyParser         =  require( 'body-parser' );
@@ -13,47 +12,17 @@ var movieController    =  require( './moviecontroller' );
 require( './db.js' );
 
 
-// === CREATE THE APP === //
 var app  =  express( );
 
-// === SET UP BODY PARSER === //
 app.use( bodyParser.json( ) );
 app.use( bodyParser.urlencoded( { extended : false } ) );
 
-// === SET UP PASSPORT === //
 app.use( passport.initialize( ) );
 
-// === CREATE ROUTER === //
 var router  =  express.Router( );
 
-// === CUSTOM FUNCTION TO GENERATE RETURN MESSAGE FOR BAD ROUTES === //
-function getBadRouteJSON( req , res , route )
-{
-	res.json(	{	
-					success:  false, 
-					msg:      req.method + " requests are not supported by " + route
-				});
-}
 
-// === CUSTOM FUNCTION TO RETURN JSON OBJECT OF HEADER, KEY, AND BODY OF REQUEST === //
-function getJSONObject( req ) 
-{
-    var json = {
-					headers  :  "No Headers",
-					key      :  process.env.UNIQUE_KEY,
-					body     :  "No Body"
-				};
 
-    if ( req.body != null ) 
-        json.body  =  req.body;
-	
-    if ( req.headers != null ) 
-        json.headers  =  req.headers;
-
-    return json;
-}
-
-// === CUSTOM FUNCTION TO RETURN JSON OBJECT OF STATUS, MESSAGE, HEADER, QUERY, & ENVIRONMENT KEY FOR /MOVIES === //
 function getMoviesJSONObject( req , msg )
 {
 	var json = {
@@ -73,9 +42,33 @@ function getMoviesJSONObject( req , msg )
 	return json;
 }
 
+function getJSONObject( req ) 
+{
+    var json = {
+					headers  :  "No Headers",
+					key      :  process.env.UNIQUE_KEY,
+					body     :  "No Body"
+				};
+
+    if ( req.body != null ) 
+        json.body  =  req.body;
+	
+    if ( req.headers != null ) 
+        json.headers  =  req.headers;
+
+    return json;
+}
+
+// BadRoutes function
+function getBadRouteJSON( req , res , route )
+{
+	res.json(	{	
+					success:  false, 
+					msg:      req.method + " requests are not supported by " + route
+				});
+}
 
 
-// === ROUTES TO /POST PERFORM A "SMART ECHO" WITH BASIC AUTH === //
 router.route('/post')
     .post(
 		authController.isAuthenticated, 
@@ -92,9 +85,6 @@ router.route('/post')
             res.json( o );
         });
 
-		
-		
-// === ROUTES TO /POSTJWT PERFORM AN "ECHO" WITH JWT AUTH === //
 router.route( '/postjwt' )
     .post(
 		authJwtController.isAuthenticated, 
@@ -114,13 +104,10 @@ router.route( '/postjwt' )
 router.route( '/findallusers' )
     .post( userController.findAllUsers );
 
-	
-	
-// === ROUTES TO /SIGNUP === //
 router.route( '/signup' )
-	// === HANDLE POST REQUESTS === //
+	// POST
 	.post( userController.signUp )
-	// === ALL OTHER ROUTES TO /SIGNUP ARE REJECTED === //
+	// BadReqs
 	.all(
 		function( req , res )
 		{ 
@@ -128,41 +115,39 @@ router.route( '/signup' )
 		});
 
 		
-		
-// === ROUTES TO /SIGNIN === //
 router.route( '/signin' )
-	// == HANDLE POST REQUESTS === //
+	// POST
 	.post( userController.signIn )
-	// === ALL OTHER ROUTES TO /SIGNIN  ARE REJECTED
+	// BadReqs
 	.all(
 		function( req , res )
 		{ 
 			getBadRouteJSON( req , res , "/signin" ); 
 		});
 
-// === ROUTES TO /MOVIES === //
+
 router.route( '/movies' )
-	// === HANDLE GET REQUESTS === //
+	// GET
 	.get(
 			authJwtController.isAuthenticated, 
 			movieController.getMovies 
 		)
-	// === HANDLE POST REQUESTS === //
+	// POST
 	.post(
 			authJwtController.isAuthenticated,
 			movieController.postMovie
 		)
-	// === HANDLE PUT REQUESTS === //
+	// PUT
 	.put(
 			authJwtController.isAuthenticated, 
 			movieController.putMovie
 		)
-	// === HANDLE DELETE REQUESTS === //
+	// DELETE
 	.delete(
 			authJwtController.isAuthenticated, 
 			movieController.deleteMovie
 		)
-	// === REJECT ALL OTHER REQUESTS TO /MOVIES === //
+	// BadReqs
 	.all(
 		function( req , res )
 		{ 

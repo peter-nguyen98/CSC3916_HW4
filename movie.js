@@ -1,8 +1,6 @@
-// === GRAB EXTERNAL RESOURCES === //
 var mongoose  =  require( 'mongoose' );
 var Schema    =  mongoose.Schema;
 
-// === CREATE THE USER SCHEMA === //
 var movieSchema  =  new Schema({
 		title        :	{ 
 							type     : String, 
@@ -29,8 +27,6 @@ var movieSchema  =  new Schema({
 						}
 	});
 	
-// === CREATE THE USER MODEL === //
 var Movie  =  mongoose.model( 'Movie' , movieSchema );
 
-// === EXPORT THE USER MODEL === //
 module.exports  =  Movie;
