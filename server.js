@@ -9,6 +9,7 @@ var User               =  require( './user' );
 var Movie              =  require( './movie' );
 var userController     =  require( './usercontroller' );
 var movieController    =  require( './moviecontroller' );
+var reviewController    =  require( './reviewcontroller' );
 require( './db.js' );
 
 
@@ -154,18 +155,32 @@ router.route( '/movies' )
 			getBadRouteJSON( req , res , "/movies" );
 		});
 
-// === ATTEMPT TO ROUTE REQUEST === //
+
+router.route( '/review' )
+	// GET
+	.get( reviewController.getReview )
+	
+	// POST
+	.post(
+			authJwtController.isAuthenticated,
+			reviewController.postReview 
+		)
+	// BadReqs
+	.all(
+		function( req , res )
+		{ 
+			getBadRouteJSON( req , res , "/movies" );
+		});
+
+
 app.use( '/' , router );
 
-// === IF UNEXPEDTED ROUTE IS SENT, REJECT IT HERE === //
 app.use(
 	function( req , res )
 	{ 
 		getBadRouteJSON( req , res , "this URL path" ); 
 	});
 
-// === LISTEN ON THE ENVIRONMENT PORT OR 8080 === //
 app.listen( process.env.PORT || 8080 );
 
-// === EXPORT APP FOR TESTS === //
 module.exports  =  app; // for testing
