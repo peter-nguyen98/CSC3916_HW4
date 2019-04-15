@@ -10,6 +10,7 @@ var Movie              =  require( './movie' );
 var userController     =  require( './usercontroller' );
 var movieController    =  require( './moviecontroller' );
 var reviewController    =  require( './reviewcontroller' );
+var cors = require('cors');
 require( './db.js' );
 
 
@@ -19,6 +20,7 @@ app.use( bodyParser.json( ) );
 app.use( bodyParser.urlencoded( { extended : false } ) );
 
 app.use( passport.initialize( ) );
+app.use(cors());
 
 var router  =  express.Router( );
 
