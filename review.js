@@ -11,7 +11,7 @@ var reviews  =  new Schema({
 							required : true
 						},
 		rating   :	{
-							type     : Double,
+							type     : String,
 							required : true
 						},
 		reviewString   :	{
