@@ -1,7 +1,7 @@
 var mongoose  =  require( 'mongoose' );
 var Schema    =  mongoose.Schema;
 
-var reviewerSchema  =  new Schema({
+var reviews  =  new Schema({
 		reviewerName       :	{ 
 							type     : String, 
 							required : true 
@@ -20,6 +20,6 @@ var reviewerSchema  =  new Schema({
 						}
 	});
 	
-var Reviewer  =  mongoose.model( 'Reviewer' , reviewerSchema );
+var Reviewer  =  mongoose.model( 'Reviewer' , reviews );
 
 module.exports  =  Reviewer;
