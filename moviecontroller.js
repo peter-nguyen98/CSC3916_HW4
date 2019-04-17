@@ -190,7 +190,8 @@ exports.getMovies =
 																title: 1,
 																yearReleased: 3,
 																genre: 9,
-																actors: 3,
+																actors: 4,
+																imageUrl:2,
 																review:'$review'
 															}
 											}
