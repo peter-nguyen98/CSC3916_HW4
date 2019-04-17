@@ -24,7 +24,11 @@ var movieSchema  =  new Schema({
 											characterName : String
 										},
 							minItems : 3
-						}
+						},
+		imageUrl   :	{
+							type     :	String
+							//required :	true
+						}					
 	});
 	
 var Movie  =  mongoose.model( 'Movie' , movieSchema );
