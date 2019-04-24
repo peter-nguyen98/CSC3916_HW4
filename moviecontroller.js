@@ -193,7 +193,7 @@ exports.getMovies =
 																actors: 4,
 																imageUrl:2,
 																review:'$review'
-																avgRating: { $avg : "$reviews.rating" }
+																avgRating: { $avg : "$review.rating" }
 															}
 											},
 											{
