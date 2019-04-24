@@ -179,7 +179,7 @@ exports.getMovies =
 											},
 											{
 												$lookup:	{
-																from         : 'reviewers', 
+																from         : 'reviewers',
 																localField   : 'title',
 																foreignField : 'movieTitle',
 																as           : 'review'
@@ -193,7 +193,11 @@ exports.getMovies =
 																actors: 4,
 																imageUrl:2,
 																review:'$review'
+																avgRating: { $avg : "$review.rating" }
 															}
+											},
+											{
+												$sort:		{ avgRating : -1 }
 											}
 										]);
 			res.status( 200 ).send( movies );
